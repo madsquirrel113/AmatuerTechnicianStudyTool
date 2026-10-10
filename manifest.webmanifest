@@ -1,0 +1,18 @@
+{
+  "name": "Technician Exam Practice",
+  "short_name": "Technician",
+  "description": "The 2026-2030 FCC Technician Class question pool.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f2f4ef",
+  "theme_color": "#183b3f",
+  "icons": [
+    {
+      "src": "study-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#183b3f">
+    <meta name="description" content="Practice with the 2026-2030 FCC Technician Class question pool.">
+    <title>Technician Exam Practice</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="study-mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles.css">
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <header class="masthead">
+      <a class="wordmark" href="./" aria-label="Technician exam practice home">
+        <span class="wordmark-mark" aria-hidden="true">RF</span>
+        <span class="wordmark-name">FIELD STUDY</span>
+      </a>
+      <div class="masthead-edition">FCC ELEMENT 2 <span>2026-2030 POOL</span></div>
+    </header>
+
+    <main id="app" class="page-shell">
+      <section id="home-screen" class="home-screen" aria-labelledby="home-title">
+        <div class="home-copy">
+          <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> AMATEUR RADIO / TECHNICIAN</p>
+          <h1 id="home-title">Your next<br><span>call sign</span><br>starts here.</h1>
+          <p class="home-edition">2026-2030 Technician Class question pool</p>
+          <button id="start-button" class="button button-primary" type="button" disabled>Loading question pool</button>
+          <p id="load-error" class="load-error" role="alert" hidden></p>
+        </div>
+
+        <aside class="home-facts" aria-label="Question pool details">
+          <div class="signal-art" aria-hidden="true">
+            <span class="signal-ring signal-ring-one"></span>
+            <span class="signal-ring signal-ring-two"></span>
+            <span class="signal-ring signal-ring-three"></span>
+            <span class="signal-core"></span>
+            <span class="signal-rule"></span>
+          </div>
+          <div class="facts-list">
+            <div class="fact-row"><span>QUESTION POOL</span><strong>409</strong></div>
+            <div class="fact-row"><span>QUESTIONS PER TEST</span><strong>35</strong></div>
+            <div class="fact-row"><span>EXAM ELEMENT</span><strong>02</strong></div>
+          </div>
+          <p class="source-note">Based on the FCC Technician Class pool syllabus, effective July 1, 2026 through June 30, 2030.</p>
+        </aside>
+      </section>
+
+      <section id="quiz-screen" class="quiz-screen" aria-labelledby="question-title" hidden>
+        <div class="quiz-toolbar">
+          <div class="quiz-label">PRACTICE TEST <span>35 QUESTIONS</span></div>
+          <button id="exit-button" class="text-button" type="button">Exit test</button>
+        </div>
+
+        <div class="progress-meta">
+          <div class="question-position"><span id="question-number">01</span><span class="position-divider">/</span><span>35</span></div>
+          <span id="group-label" class="group-label">T1A</span>
+        </div>
+        <div class="progress-track" role="progressbar" aria-label="Test progress" aria-valuemin="0" aria-valuemax="35" aria-valuenow="1">
+          <span id="progress-fill" class="progress-fill"></span>
+        </div>
+
+        <article class="question-block">
+          <h1 id="question-title" tabindex="-1"></h1>
+          <div id="answer-list" class="answer-list" role="group" aria-label="Answer choices"></div>
+        </article>
+
+        <div class="answer-footer">
+          <p id="answer-feedback" class="answer-feedback" role="status" aria-live="polite" hidden></p>
+          <button id="next-button" class="button button-primary" type="button" hidden>Next question</button>
+        </div>
+      </section>
+
+      <section id="results-screen" class="results-screen" aria-labelledby="results-title" hidden>
+        <p class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> TEST COMPLETE</p>
+        <h1 id="results-title">Your result</h1>
+        <div class="score-line"><strong id="score-value">0</strong><span>/ 35</span></div>
+        <p id="score-summary" class="score-summary"></p>
+        <button id="restart-button" class="button button-primary" type="button">Start a new test</button>
+
+        <details id="review-details" class="review-details">
+          <summary>Review missed questions <span id="missed-count" class="missed-count"></span></summary>
+          <div id="missed-list" class="missed-list"></div>
+        </details>
+      </section>
+    </main>
+
+    <footer class="page-footer">
+      <span>TECHNICIAN CLASS / ELEMENT 2</span>
+      <span>QUESTION TEXT FROM THE 2026-2030 POOL</span>
+    </footer>
+  </body>
+</html>
