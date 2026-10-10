@@ -172,6 +172,48 @@ summary:focus-visible {
   background: #c9492e;
 }
 
+.study-progress {
+  display: flex;
+  max-width: 410px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+#study-progress-summary {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.study-progress-note {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.history-button {
+  min-height: 36px;
+  padding: 6px 0 6px 8px;
+  border: 0;
+  color: var(--coral);
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.history-button:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .button:disabled {
   cursor: wait;
   background: #8b9692;

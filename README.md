@@ -2,6 +2,8 @@
 
 A dependency-free, installable web app using the supplied 2026-2030 Technician Class question pool. Each test draws 35 questions at random, reveals the correct answer after a selection, and shows a score out of 35 with a missed-question review.
 
+Tests keep the official subelement distribution while favoring new questions and mixing in due review questions. Missed questions become eligible on the next test; two consecutive correct answers clear their review priority. Study history is stored locally in the current browser and does not sync across devices.
+
 ## Run locally
 
 Serve this folder with any static web server. Opening `index.html` directly as a `file://` URL will prevent the browser from loading the question bank and service worker.

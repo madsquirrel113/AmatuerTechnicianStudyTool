@@ -1,4 +1,18 @@
 const TEST_LENGTH = 35;
+const EXAM_DISTRIBUTION = {
+  T1: 6,
+  T2: 3,
+  T3: 3,
+  T4: 2,
+  T5: 4,
+  T6: 4,
+  T7: 4,
+  T8: 4,
+  T9: 2,
+  T0: 3,
+};
+const STUDY_PROGRESS_KEY = "technician-study-progress-v1";
+const MASTERED_STREAK = 2;
 
 const homeScreen = document.querySelector("#home-screen");
 const quizScreen = document.querySelector("#quiz-screen");
@@ -23,6 +37,8 @@ const missedCount = document.querySelector("#missed-count");
 const missedList = document.querySelector("#missed-list");
 const reviewDetails = document.querySelector("#review-details");
 const loadError = document.querySelector("#load-error");
+const studyProgressSummary = document.querySelector("#study-progress-summary");
+const resetProgressButton = document.querySelector("#reset-progress-button");
 
 let allQuestions = [];
 let testQuestions = [];
@@ -30,6 +46,8 @@ let missedQuestions = [];
 let currentIndex = 0;
 let score = 0;
 let answered = false;
+let studyProgress = loadStudyProgress();
+let testComposition = { newCount: 0, reviewCount: 0, refreshCount: 0 };
 
 function shuffle(items) {
   const shuffled = [...items];
@@ -40,6 +58,177 @@ function shuffle(items) {
   return shuffled;
 }
 
+function createEmptyStudyProgress() {
+  return { version: 1, testsStarted: 0, questions: {} };
+}
+
+function loadStudyProgress() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(STUDY_PROGRESS_KEY));
+    if (
+      stored?.version !== 1 ||
+      !Number.isInteger(stored.testsStarted) ||
+      !stored.questions ||
+      typeof stored.questions !== "object" ||
+      Array.isArray(stored.questions)
+    ) {
+      return createEmptyStudyProgress();
+    }
+    return stored;
+  } catch {
+    return createEmptyStudyProgress();
+  }
+}
+
+function saveStudyProgress() {
+  try {
+    localStorage.setItem(STUDY_PROGRESS_KEY, JSON.stringify(studyProgress));
+  } catch {
+    // Keep the current session usable if browser storage is unavailable.
+  }
+}
+
+function getQuestionProgress(questionId) {
+  return studyProgress.questions[questionId] ?? null;
+}
+
+function ensureQuestionProgress(questionId) {
+  studyProgress.questions[questionId] ??= {
+    seenCount: 0,
+    attemptCount: 0,
+    correctCount: 0,
+    wrongCount: 0,
+    correctStreak: 0,
+    lastSeenTest: 0,
+    reviewAfterTest: null,
+  };
+  return studyProgress.questions[questionId];
+}
+
+function isDueForReview(question) {
+  const progress = getQuestionProgress(question.id);
+  if (!progress) return false;
+  if (progress.attemptCount === 0 && progress.seenCount > 0) return true;
+  return (
+    progress.wrongCount > 0 &&
+    progress.correctStreak < MASTERED_STREAK &&
+    progress.reviewAfterTest <= studyProgress.testsStarted
+  );
+}
+
+function isInReviewQueue(question) {
+  const progress = getQuestionProgress(question.id);
+  return Boolean(
+    progress &&
+      ((progress.attemptCount === 0 && progress.seenCount > 0) ||
+        (progress.wrongCount > 0 && progress.correctStreak < MASTERED_STREAK)),
+  );
+}
+
+function weightedSample(items, count, getWeight) {
+  const remaining = [...items];
+  const selected = [];
+
+  while (selected.length < count && remaining.length > 0) {
+    const weights = remaining.map((item) => Math.max(0.001, getWeight(item)));
+    const totalWeight = weights.reduce((total, weight) => total + weight, 0);
+    let selection = Math.random() * totalWeight;
+    let selectedIndex = weights.findIndex((weight) => {
+      selection -= weight;
+      return selection < 0;
+    });
+    if (selectedIndex === -1) selectedIndex = remaining.length - 1;
+    selected.push(remaining.splice(selectedIndex, 1)[0]);
+  }
+
+  return selected;
+}
+
+function selectTestQuestions() {
+  const selectedQuestions = [];
+  const composition = { newCount: 0, reviewCount: 0, refreshCount: 0 };
+
+  for (const [subelement, quota] of Object.entries(EXAM_DISTRIBUTION)) {
+    const pool = allQuestions.filter((question) => question.id.startsWith(subelement));
+    const unseen = pool.filter((question) => !getQuestionProgress(question.id));
+    const dueForReview = pool.filter(isDueForReview);
+    const selected = [];
+    const selectedIds = new Set();
+
+    const addSample = (candidates, count, category, getWeight) => {
+      const available = candidates.filter((question) => !selectedIds.has(question.id));
+      const sample = weightedSample(available, count, getWeight);
+      for (const question of sample) {
+        selected.push(question);
+        selectedIds.add(question.id);
+        composition[category] += 1;
+      }
+    };
+
+    const newTarget = Math.min(quota, Math.round((quota * 2) / 3), unseen.length);
+    addSample(unseen, newTarget, "newCount", () => 1);
+
+    const reviewWeight = (question) => {
+      const progress = getQuestionProgress(question.id);
+      const wrongBoost = Math.min(1 + progress.wrongCount, 4);
+      const testsSinceSeen = Math.max(0, studyProgress.testsStarted - progress.lastSeenTest);
+      return wrongBoost * (1 + Math.min(testsSinceSeen, 6) / 6);
+    };
+    addSample(dueForReview, quota - selected.length, "reviewCount", reviewWeight);
+
+    addSample(unseen, quota - selected.length, "newCount", () => 1);
+    addSample(dueForReview, quota - selected.length, "reviewCount", reviewWeight);
+
+    const refreshWeight = (question) => {
+      const progress = getQuestionProgress(question.id);
+      const difficultyBoost = (1 + Math.min(progress.wrongCount, 3)) / (1 + Math.min(progress.correctCount, 3));
+      const testsSinceSeen = Math.max(0, studyProgress.testsStarted - progress.lastSeenTest);
+      return difficultyBoost * (1 + Math.min(testsSinceSeen, 8) / 8);
+    };
+    addSample(pool, quota - selected.length, "refreshCount", refreshWeight);
+
+    if (selected.length !== quota) {
+      throw new Error(`Subelement ${subelement} has fewer than ${quota} available questions.`);
+    }
+    selectedQuestions.push(...selected);
+  }
+
+  return { questions: shuffle(selectedQuestions), composition };
+}
+
+function refreshStudyProgressSummary() {
+  if (!allQuestions.length) return;
+  const seenCount = Object.values(studyProgress.questions).filter((progress) => progress.seenCount > 0).length;
+  const reviewCount = allQuestions.filter(isInReviewQueue).length;
+  studyProgressSummary.textContent = `${seenCount} of ${allQuestions.length} seen · ${reviewCount} to review`;
+  resetProgressButton.disabled = seenCount === 0 && studyProgress.testsStarted === 0;
+}
+
+function recordQuestionSeen(question) {
+  const progress = ensureQuestionProgress(question.id);
+  if (progress.lastSeenTest === studyProgress.testsStarted) return;
+  progress.seenCount += 1;
+  progress.lastSeenTest = studyProgress.testsStarted;
+  saveStudyProgress();
+  refreshStudyProgressSummary();
+}
+
+function recordQuestionAnswer(question, correct) {
+  const progress = ensureQuestionProgress(question.id);
+  progress.attemptCount += 1;
+  if (correct) {
+    progress.correctCount += 1;
+    progress.correctStreak += 1;
+    if (progress.correctStreak >= MASTERED_STREAK) progress.reviewAfterTest = null;
+  } else {
+    progress.wrongCount += 1;
+    progress.correctStreak = 0;
+    progress.reviewAfterTest = studyProgress.testsStarted + 1;
+  }
+  saveStudyProgress();
+  refreshStudyProgressSummary();
+}
+
 function showScreen(screen) {
   homeScreen.hidden = screen !== homeScreen;
   quizScreen.hidden = screen !== quizScreen;
@@ -48,7 +237,12 @@ function showScreen(screen) {
 }
 
 function startTest() {
-  testQuestions = shuffle(allQuestions).slice(0, TEST_LENGTH);
+  studyProgress.testsStarted += 1;
+  const selection = selectTestQuestions();
+  testQuestions = selection.questions;
+  testComposition = selection.composition;
+  saveStudyProgress();
+  refreshStudyProgressSummary();
   missedQuestions = [];
   currentIndex = 0;
   score = 0;
@@ -63,6 +257,7 @@ function renderQuestion() {
   questionNumber.textContent = String(currentIndex + 1).padStart(2, "0");
   groupLabel.textContent = question.group;
   questionTitle.textContent = question.question;
+  recordQuestionSeen(question);
   const figureMatch = question.question.match(/\bfigure\s+(T-\d+)\b/i);
   questionFigure.hidden = !figureMatch;
   if (figureMatch) {
@@ -114,6 +309,7 @@ function selectAnswer(selectedLetter) {
   const question = testQuestions[currentIndex];
   const correct = selectedLetter === question.answer;
   const correctChoice = question.choices.find((choice) => choice.letter === question.answer);
+  recordQuestionAnswer(question, correct);
 
   if (correct) {
     score += 1;
@@ -140,7 +336,7 @@ function selectAnswer(selectedLetter) {
 
 function showResults() {
   scoreValue.textContent = String(score);
-  scoreSummary.textContent = `${score} correct, ${TEST_LENGTH - score} missed.`;
+  scoreSummary.textContent = `${score} correct, ${TEST_LENGTH - score} missed. ${testComposition.newCount} new · ${testComposition.reviewCount} review · ${testComposition.refreshCount} repeat.`;
   missedCount.textContent = `${missedQuestions.length}`;
   missedList.replaceChildren();
 
@@ -187,6 +383,12 @@ nextButton.addEventListener("click", () => {
 startButton.addEventListener("click", startTest);
 restartButton.addEventListener("click", startTest);
 exitButton.addEventListener("click", () => showScreen(homeScreen));
+resetProgressButton.addEventListener("click", () => {
+  if (!window.confirm("Clear all study history saved on this browser?")) return;
+  studyProgress = createEmptyStudyProgress();
+  saveStudyProgress();
+  refreshStudyProgressSummary();
+});
 
 async function loadQuestionBank() {
   try {
@@ -197,6 +399,7 @@ async function loadQuestionBank() {
       throw new Error("The question pool is incomplete.");
     }
     allQuestions = bank.questions;
+    refreshStudyProgressSummary();
     startButton.disabled = false;
     startButton.textContent = "Begin practice test";
   } catch {
