@@ -1,4 +1,4 @@
-const CACHE_NAME = "technician-study-2026-v1";
+const CACHE_NAME = "technician-study-2026-v2";
 const APP_FILES = [
   "./",
   "index.html",
@@ -7,6 +7,9 @@ const APP_FILES = [
   "manifest.webmanifest",
   "study-mark.svg",
   "data/questions.json",
+  "data/figures/T-1.jpeg",
+  "data/figures/T-2.jpeg",
+  "data/figures/T-3.jpeg",
 ];
 
 self.addEventListener("install", (event) => {

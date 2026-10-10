@@ -12,6 +12,9 @@ const groupLabel = document.querySelector("#group-label");
 const progressTrack = document.querySelector(".progress-track");
 const progressFill = document.querySelector("#progress-fill");
 const questionTitle = document.querySelector("#question-title");
+const questionFigure = document.querySelector("#question-figure");
+const figureImage = document.querySelector("#figure-image");
+const figureCaption = document.querySelector("#figure-caption");
 const answerList = document.querySelector("#answer-list");
 const answerFeedback = document.querySelector("#answer-feedback");
 const scoreValue = document.querySelector("#score-value");
@@ -60,6 +63,18 @@ function renderQuestion() {
   questionNumber.textContent = String(currentIndex + 1).padStart(2, "0");
   groupLabel.textContent = question.group;
   questionTitle.textContent = question.question;
+  const figureMatch = question.question.match(/\bfigure\s+(T-\d+)\b/i);
+  questionFigure.hidden = !figureMatch;
+  if (figureMatch) {
+    const figureId = figureMatch[1].toUpperCase();
+    figureImage.src = `data/figures/${figureId}.jpeg`;
+    figureImage.alt = `Electrical schematic ${figureId} with numbered components`;
+    figureCaption.textContent = `Figure ${figureId}`;
+  } else {
+    figureImage.removeAttribute("src");
+    figureImage.alt = "";
+    figureCaption.textContent = "";
+  }
   answerList.replaceChildren();
   answerFeedback.hidden = true;
   answerFeedback.textContent = "";

@@ -385,6 +385,29 @@ summary:focus-visible {
   line-height: 1.32;
 }
 
+.question-figure {
+  width: min(100%, 720px);
+  margin: 0 0 22px;
+}
+
+.question-figure img {
+  display: block;
+  width: 100%;
+  max-height: min(45vh, 360px);
+  margin: 0 auto;
+  border: 1px solid #d3dbd3;
+  background: #fff;
+  object-fit: contain;
+}
+
+.question-figure figcaption {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+}
+
 .answer-list {
   display: grid;
   gap: 10px;
